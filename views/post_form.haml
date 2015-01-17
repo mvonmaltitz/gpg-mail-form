@@ -1,0 +1,13 @@
+.row
+  .column.small-6.small-centered
+    %h1
+      Post Results
+    Here are your results:
+
+    %dl
+      - params.each_pair do |k,v|
+        %dt
+          = "#{k}:"
+        %dd
+          %pre
+            = v

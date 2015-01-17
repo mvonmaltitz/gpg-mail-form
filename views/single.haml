@@ -1,0 +1,15 @@
+.row
+  .column.small-6.small-centered
+    %h1
+      Single field encryption
+    %form{action: "/post_form", method: "post", data:{encrypted_form: true}}
+      %label{for: "name"} Name
+      %input{name: "name", id: "name", value: "John Doe"}
+
+      %label{for: "email"} e-Mail-Address
+      %input{name: "email", id: "email", value: "john.doe@example.com"}
+
+      %label{for: "body"} Content
+      %textarea{name: "body", id: "body", data: {encrypt: true}}
+        I just wanted to ...
+      %input{type:"submit"}

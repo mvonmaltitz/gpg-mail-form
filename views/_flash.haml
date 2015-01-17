@@ -1,0 +1,6 @@
+- flash.keys.each do |key|
+  .alert-box.radius.row{data:{alert: ""},class: key.to_s}
+    .small-12.columns
+      = flash[key]
+    %a.close{ href: "#"}
+      &times;
