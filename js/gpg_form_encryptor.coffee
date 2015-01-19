@@ -24,11 +24,15 @@ submit_handler = (e, form) ->
     console.log(result)
     single_defer.resolve()
   )
-  group_encryption(form, values, (result) ->
-    #console.log(result)
-    group_defer.resolve()
+  $.when(single_defer).done(()->
+    group_encryption(form, values, (result) ->
+      console.log(result)
+      group_defer.resolve()
+    )
   )
-  $.when(single_defer, group_defer).done(() -> # Spat defers to param list with apply
+  $.when(single_defer, group_defer).done(() ->
+    #console.log values
+    #reinsert_values values
     #form.submit()
   )
 
@@ -47,7 +51,6 @@ single_encryption = (form, values, callback) ->
   defers = []
   encrypt_requested_fields(values, names_to_encrypt, defers)
   $.when.apply($, defers).done(() -> # Spat defers to param list with apply
-    reinsert_values values
     callback(values)
   )
 
@@ -63,7 +66,6 @@ encrypt_requested_fields = (values, names_to_encrypt, defers) ->
     if contains(element.name, names_to_encrypt)
       d = $.Deferred()
       defers.push d
-      console.log "Encrypting #{element.name}"
       encrypt(element.value, (result_string)->
         element.value = result_string.toString()
         console.log "#{element.name} finished encryption"
@@ -92,15 +94,8 @@ group_encryption = (form, values, callback) ->
   buffer = collect_sources(elements)
   encryption_source_names = find_names_for(form, elements)
   wipe_source_fields(values, encryption_source_names)
-  #encrypt buffer
-  #write to target
-  callback()
-
-#  write_target(buffer)
-#elements_with_name_in = (source, reference) ->
-#  return $.grep(source, (element) ->
-#    contains(element.name, reference)
-#  )
+  write_target(buffer, values)
+  callback(values)
 
 collect_sources = (elements)->
   buffer = ""
@@ -119,23 +114,22 @@ find_label = (element) ->
     return placeholder
   else
     return name
+
 wipe_source_fields = (data, encryption_source_names) ->
   for element in data
     if contains(element.name, encryption_source_names)
       element.value = ""
 
-#write_target = (buffer )->
-#  target = $("*[data-encrypt-target]")
-#  #console.log(target[0])
-#  if target[0]
-#    encrypt(buffer, (result_string) ->
-#      target[0].value = result_string.toString()
-#    )
-#  else
-#    console.error("No target defined")
-
-
-
+write_target = (buffer, data)->
+  target_name = $("*[data-encrypt-target]").attr("name")
+  if target_name[0]
+    encrypt(buffer, (result_string) ->
+      data[0].value =result_string.toString()
+      #data.push {name: target_name, value: result_string.toString()}
+      console.log data
+    )
+  else
+    console.error("No target defined")
 
 $(document).ready(ready)
 $(document).on('page:load', ready)
