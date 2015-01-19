@@ -18,18 +18,26 @@ load_key = ->
 submit_handler = (e, form) ->
   e.preventDefault()
   values = get_values(form)
-  source_encryption_names = find_names_for(form, "*[data-encrypt-source]")
+  single_defer = $.Deferred()
+  group_defer = $.Deferred()
+  single_encryption(form, values, (result) ->
+    console.log(result)
+    single_defer.resolve()
+  )
+  group_encryption(form, values, (result) ->
+    #console.log(result)
+    group_defer.resolve()
+  )
+  $.when(single_defer, group_defer).done(() -> # Spat defers to param list with apply
+    #form.submit()
+  )
 
+  #  source_encryption_names = find_names_for(form, "*[data-encrypt-source]")
   #$(form).find("*[data-encrypt]").each (index, element) ->
   #  n = $(element).attr("name")
   #  direct_encryption_names.push n
   ## names angelegt
   ##  arrray anlegen , duchlaufen encrypten
-  #group_encryption($(form).find("*[data-encrypt-source]"))
-  single_encryption(form, values, (result) ->
-    console.log(result)
-    form.submit()
-  )
 
 get_values = (form) ->
   return $(form).serializeArray()
@@ -79,6 +87,15 @@ reinsert_values = (values) ->
   for i in [0..values.length-1]
     $("*[name='#{values[i].name}']").val(values[i].value)
 
+group_encryption = (form, values, callback) ->
+  callback()
+#  buffer = collect_sources(elements)
+
+#  write_target(buffer)
+#elements_with_name_in = (source, reference) ->
+#  return $.grep(source, (element) ->
+#    contains(element.name, reference)
+#  )
 # Future code for group encrypt function
 #find_label = (element) ->
 #  id = element.id
@@ -108,13 +125,6 @@ reinsert_values = (values) ->
 #  else
 #    console.error("No target defined")
 
-#group_encryption = (elements) ->
-#  buffer = collect_sources(elements)
-#  write_target(buffer)
-#elements_with_name_in = (source, reference) ->
-#  return $.grep(source, (element) ->
-#    contains(element.name, reference)
-#  )
 
 
 
