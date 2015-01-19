@@ -88,9 +88,13 @@ reinsert_values = (values) ->
     $("*[name='#{values[i].name}']").val(values[i].value)
 
 group_encryption = (form, values, callback) ->
+  elements = $("*[data-encrypt-source]")
+  buffer = collect_sources(elements)
+  encryption_source_names = find_names_for(form, elements)
+  wipe_source_fields(values, encryption_source_names)
+  #encrypt buffer
+  #write to target
   callback()
-  buffer = collect_sources($("*[data-encrypt-source]"))
-  console.log buffer
 
 #  write_target(buffer)
 #elements_with_name_in = (source, reference) ->
@@ -104,7 +108,6 @@ collect_sources = (elements)->
     buffer += "#{find_label(element)}: #{$(element).val()}\n"
   return buffer
 
-# Future code for group encrypt function
 find_label = (element) ->
   id = element.id
   placeholder = $(element).attr("placeholder")
@@ -116,7 +119,10 @@ find_label = (element) ->
     return placeholder
   else
     return name
-
+wipe_source_fields = (data, encryption_source_names) ->
+  for element in data
+    if contains(element.name, encryption_source_names)
+      element.value = ""
 
 #write_target = (buffer )->
 #  target = $("*[data-encrypt-target]")
