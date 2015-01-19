@@ -10,6 +10,9 @@ module Sinatra
       app.get '/single' do
         haml :single
       end
+      app.get '/group' do
+        haml :group
+      end
       app.post '/post_form' do
         haml :post_form
       end
