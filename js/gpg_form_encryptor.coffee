@@ -87,10 +87,13 @@ reinsert_values = (values) ->
 
 group_encryption = (form, values, callback) ->
   elements = $("*[data-encrypt-source]")
-  buffer = collect_sources(elements)
   encryption_source_names = find_names_for(form, elements)
-  wipe_source_fields(values, encryption_source_names)
-  write_target(buffer, values, callback)
+  if encryption_source_names.length
+    buffer = collect_sources(elements)
+    wipe_source_fields(values, encryption_source_names)
+    write_target(buffer, values, callback)
+  else
+    callback()
 
 collect_sources = (elements)->
   buffer = ""
