@@ -10,8 +10,11 @@ module Sinatra
       app.get '/single' do
         haml :single
       end
-      app.get '/group' do
-        haml :group
+      app.get '/group_with_hidden_target' do
+        haml :group_with_hidden_target
+      end
+      app.get '/group_with_input_target' do
+        haml :group_with_input_target
       end
       app.post '/post_form' do
         haml :post_form
