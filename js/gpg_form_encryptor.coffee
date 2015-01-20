@@ -21,19 +21,16 @@ submit_handler = (e, form) ->
   single_defer = $.Deferred()
   group_defer = $.Deferred()
   single_encryption(form, values, (result) ->
-    console.log(result)
     single_defer.resolve()
   )
   $.when(single_defer).done(()->
     group_encryption(form, values, (result) ->
-      console.log(result)
       group_defer.resolve()
     )
   )
   $.when(single_defer, group_defer).done(() ->
-    #console.log values
-    #reinsert_values values
-    #form.submit()
+    reinsert_values values
+    form.submit()
   )
 
   #  source_encryption_names = find_names_for(form, "*[data-encrypt-source]")
@@ -68,7 +65,6 @@ encrypt_requested_fields = (values, names_to_encrypt, defers) ->
       defers.push d
       encrypt(element.value, (result_string)->
         element.value = result_string.toString()
-        console.log "#{element.name} finished encryption"
         d.resolve()
       )
 
@@ -94,8 +90,7 @@ group_encryption = (form, values, callback) ->
   buffer = collect_sources(elements)
   encryption_source_names = find_names_for(form, elements)
   wipe_source_fields(values, encryption_source_names)
-  write_target(buffer, values)
-  callback(values)
+  write_target(buffer, values, callback)
 
 collect_sources = (elements)->
   buffer = ""
@@ -120,13 +115,14 @@ wipe_source_fields = (data, encryption_source_names) ->
     if contains(element.name, encryption_source_names)
       element.value = ""
 
-write_target = (buffer, data)->
+write_target = (buffer, data, callback)->
   target_name = $("*[data-encrypt-target]").attr("name")
-  if target_name[0]
+  if target_name
     encrypt(buffer, (result_string) ->
-      data[0].value =result_string.toString()
-      #data.push {name: target_name, value: result_string.toString()}
-      console.log data
+      for element in data
+        if element.name == target_name
+          element.value = result_string.toString()
+      callback(data)
     )
   else
     console.error("No target defined")
