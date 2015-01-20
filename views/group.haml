@@ -1,7 +1,7 @@
 .row
   .column.small-6.small-centered
     %h1
-      Single field encryption
+      Group field encryption
     %form{action: "/post_form", method: "post", data:{encrypted_form: true}}
       %label{for: "name"} Name
       %input{name: "name", id: "name", data: {encrypt_source: true}, value: "John Doe"}
