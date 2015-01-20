@@ -18,18 +18,27 @@ load_key = ->
 submit_handler = (e, form) ->
   e.preventDefault()
   values = get_values(form)
-  source_encryption_names = find_names_for(form, "*[data-encrypt-source]")
+  single_defer = $.Deferred()
+  group_defer = $.Deferred()
+  single_encryption(form, values, (result) ->
+    single_defer.resolve()
+  )
+  $.when(single_defer).done(()->
+    group_encryption(form, values, (result) ->
+      group_defer.resolve()
+    )
+  )
+  $.when(single_defer, group_defer).done(() ->
+    reinsert_values values
+    form.submit()
+  )
 
+  #  source_encryption_names = find_names_for(form, "*[data-encrypt-source]")
   #$(form).find("*[data-encrypt]").each (index, element) ->
   #  n = $(element).attr("name")
   #  direct_encryption_names.push n
   ## names angelegt
   ##  arrray anlegen , duchlaufen encrypten
-  #group_encryption($(form).find("*[data-encrypt-source]"))
-  single_encryption(form, values, (result) ->
-    console.log(result)
-    form.submit()
-  )
 
 get_values = (form) ->
   return $(form).serializeArray()
@@ -39,7 +48,6 @@ single_encryption = (form, values, callback) ->
   defers = []
   encrypt_requested_fields(values, names_to_encrypt, defers)
   $.when.apply($, defers).done(() -> # Spat defers to param list with apply
-    reinsert_values values
     callback(values)
   )
 
@@ -55,10 +63,8 @@ encrypt_requested_fields = (values, names_to_encrypt, defers) ->
     if contains(element.name, names_to_encrypt)
       d = $.Deferred()
       defers.push d
-      console.log "Encrypting #{element.name}"
       encrypt(element.value, (result_string)->
         element.value = result_string.toString()
-        console.log "#{element.name} finished encryption"
         d.resolve()
       )
 
@@ -79,44 +85,47 @@ reinsert_values = (values) ->
   for i in [0..values.length-1]
     $("*[name='#{values[i].name}']").val(values[i].value)
 
-# Future code for group encrypt function
-#find_label = (element) ->
-#  id = element.id
-#  placeholder = $(element).attr("placeholder")
-#  name = $(element).attr("name")
-#  label = $("label[for='#{id}']").text()
-#  if label
-#    return label
-#  else if placeholder
-#    return placeholder
-#  else
-#    return name
+group_encryption = (form, values, callback) ->
+  elements = $("*[data-encrypt-source]")
+  buffer = collect_sources(elements)
+  encryption_source_names = find_names_for(form, elements)
+  wipe_source_fields(values, encryption_source_names)
+  write_target(buffer, values, callback)
 
-#collect_sources = (elements)->
-#  buffer = ""
-#  elements.each (index,element ) ->
-#    buffer += "#{find_label(element)}: #{$(element).val()}\n"
-#  return buffer
+collect_sources = (elements)->
+  buffer = ""
+  elements.each (index,element ) ->
+    buffer += "#{find_label(element)}: #{$(element).val()}\n"
+  return buffer
 
-#write_target = (buffer )->
-#  target = $("*[data-encrypt-target]")
-#  #console.log(target[0])
-#  if target[0]
-#    encrypt(buffer, (result_string) ->
-#      target[0].value = result_string.toString()
-#    )
-#  else
-#    console.error("No target defined")
+find_label = (element) ->
+  id = element.id
+  placeholder = $(element).attr("placeholder")
+  name = $(element).attr("name")
+  label = $("label[for='#{id}']").text()
+  if label
+    return label
+  else if placeholder
+    return placeholder
+  else
+    return name
 
-#group_encryption = (elements) ->
-#  buffer = collect_sources(elements)
-#  write_target(buffer)
-#elements_with_name_in = (source, reference) ->
-#  return $.grep(source, (element) ->
-#    contains(element.name, reference)
-#  )
+wipe_source_fields = (data, encryption_source_names) ->
+  for element in data
+    if contains(element.name, encryption_source_names)
+      element.value = ""
 
-
+write_target = (buffer, data, callback)->
+  target_name = $("*[data-encrypt-target]").attr("name")
+  if target_name
+    encrypt(buffer, (result_string) ->
+      for element in data
+        if element.name == target_name
+          element.value = result_string.toString()
+      callback(data)
+    )
+  else
+    console.error("No target defined")
 
 $(document).ready(ready)
 $(document).on('page:load', ready)
