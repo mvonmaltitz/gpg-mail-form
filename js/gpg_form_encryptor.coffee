@@ -1,14 +1,19 @@
 class this.GPGFormEncryptor
-  form_selector: "form[data-encrypted-form]"
-  single_selector: "*[data-encrypt]"
-  group_source_selector: "*[data-encrypt-source]"
-  group_target_selector: "*[data-encrypt-target]"
+  selectors : {
+    form_selector: "form[data-encrypted-form]"
+    single_selector: "*[data-encrypt]"
+    group_source_selector: "*[data-encrypt-source]"
+    group_target_selector: "*[data-encrypt-target]"
+  }
 
-  constructor: (armored_key) ->
+  constructor: (armored_key, user_defined_selectors = {}) ->
+    $.each(user_defined_selectors, (key, value) =>
+      @selectors[key] = value
+    )
     @load_key(armored_key)
 
   setup: ->
-    $(@form_selector).each (index, element) =>
+    $(@selectors.form_selector).each (index, element) =>
       $(element).submit((e)=>
         @submit_handler(e, element)
       )
@@ -44,7 +49,7 @@ class this.GPGFormEncryptor
     return $(form).serializeArray()
 
   single_encryption: (form, form_data, callback) ->
-    names_to_encrypt = @find_names_for(form, @single_selector)
+    names_to_encrypt = @find_names_for(form, @selectors.single_selector)
     defers = []
     @encrypt_requested_fields(form_data, names_to_encrypt, defers)
     $.when.apply($, defers).done(() -> # Spat defers to param list with apply
@@ -86,7 +91,7 @@ class this.GPGFormEncryptor
       $("*[name='#{form_data[i].name}']").val(form_data[i].value)
 
   group_encryption: (form, form_data, callback) ->
-    elements = $(@group_source_selector)
+    elements = $(@selectors.group_source_selector)
     encryption_source_names = @find_names_for(form, elements)
     if encryption_source_names.length
       buffer = @collect_sources(elements)
@@ -119,7 +124,7 @@ class this.GPGFormEncryptor
         element.value = ""
 
   write_target: (buffer, data, callback)->
-    target_name = $(@group_target_selector).attr("name")
+    target_name = $(@selectors.group_target_selector).attr("name")
     if target_name
       @encrypt(buffer, (result_string) ->
         for element in data
@@ -129,5 +134,3 @@ class this.GPGFormEncryptor
       )
     else
       console.error("No target defined")
-
-
