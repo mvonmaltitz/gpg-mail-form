@@ -3,7 +3,7 @@ class GPGFormEncryptor
   constructor: (armored_key) ->
     @load_key(armored_key)
 
-  ready: ->
+  setup: ->
       $("form[data-encrypted-form]").each (index, element) =>
         $(element).submit((e)=>
           @submit_handler(e, element)
@@ -20,31 +20,31 @@ class GPGFormEncryptor
 
   submit_handler: (e, form) ->
     e.preventDefault()
-    values = @get_values(form)
+    form_data = @get_values(form)
     single_defer = $.Deferred()
     group_defer = $.Deferred()
-    @single_encryption(form, values, (result) ->
+    @single_encryption(form, form_data, (result) ->
       single_defer.resolve()
     )
     $.when(single_defer).done(() =>
-      @group_encryption(form, values, (result) ->
+      @group_encryption(form, form_data, (result) ->
         group_defer.resolve()
       )
     )
     $.when(single_defer, group_defer).done(() =>
-      @reinsert_values values
+      @reinsert_values form_data
       form.submit()
     )
 
   get_values: (form) ->
     return $(form).serializeArray()
 
-  single_encryption: (form, values, callback) ->
+  single_encryption: (form, form_data, callback) ->
     names_to_encrypt = @find_names_for(form, "*[data-encrypt]")
     defers = []
-    @encrypt_requested_fields(values, names_to_encrypt, defers)
+    @encrypt_requested_fields(form_data, names_to_encrypt, defers)
     $.when.apply($, defers).done(() -> # Spat defers to param list with apply
-      callback(values)
+      callback(form_data)
     )
 
   find_names_for: (root, selector) ->
@@ -54,8 +54,8 @@ class GPGFormEncryptor
       names.push n
     return names
 
-  encrypt_requested_fields: (values, names_to_encrypt, defers) ->
-    for element in values
+  encrypt_requested_fields: (form_data, names_to_encrypt, defers) ->
+    for element in form_data
       if @contains(element.name, names_to_encrypt)
         d = $.Deferred()
         defers.push d
@@ -77,17 +77,17 @@ class GPGFormEncryptor
       else
         callback(result_string)
 
-  reinsert_values: (values) ->
-    for i in [0..values.length-1]
-      $("*[name='#{values[i].name}']").val(values[i].value)
+  reinsert_values: (form_data) ->
+    for i in [0..form_data.length-1]
+      $("*[name='#{form_data[i].name}']").val(form_data[i].value)
 
-  group_encryption: (form, values, callback) ->
+  group_encryption: (form, form_data, callback) ->
     elements = $("*[data-encrypt-source]")
     encryption_source_names = @find_names_for(form, elements)
     if encryption_source_names.length
       buffer = @collect_sources(elements)
-      @wipe_source_fields(values, encryption_source_names)
-      @write_target(buffer, values, callback)
+      @wipe_source_fields(form_data, encryption_source_names)
+      @write_target(buffer, form_data, callback)
     else
       callback()
 
@@ -215,6 +215,6 @@ k7HUdYeq8nOBfLOg2pe/9WmJacbU43bOHhNbPIwkkaJy7A80
 -----END PGP PUBLIC KEY BLOCK-----'''
 ready = ->
   encryptor = new GPGFormEncryptor(armored_key)
-  encryptor.ready()
+  encryptor.setup()
 $(document).ready(ready)
 $(document).on('page:load',ready)
