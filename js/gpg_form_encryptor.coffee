@@ -1,13 +1,17 @@
 class this.GPGFormEncryptor
-  @pubkey = null
+  form_selector: "form[data-encrypted-form]"
+  single_selector: "*[data-encrypt]"
+  group_source_selector: "*[data-encrypt-source]"
+  group_target_selector: "*[data-encrypt-target]"
+
   constructor: (armored_key) ->
     @load_key(armored_key)
 
   setup: ->
-      $("form[data-encrypted-form]").each (index, element) =>
-        $(element).submit((e)=>
-          @submit_handler(e, element)
-        )
+    $(@form_selector).each (index, element) =>
+      $(element).submit((e)=>
+        @submit_handler(e, element)
+      )
   load_key: (armored_key)->
     kbpgp.KeyManager.import_from_armored_pgp {
       armored: armored_key
@@ -40,7 +44,7 @@ class this.GPGFormEncryptor
     return $(form).serializeArray()
 
   single_encryption: (form, form_data, callback) ->
-    names_to_encrypt = @find_names_for(form, "*[data-encrypt]")
+    names_to_encrypt = @find_names_for(form, @single_selector)
     defers = []
     @encrypt_requested_fields(form_data, names_to_encrypt, defers)
     $.when.apply($, defers).done(() -> # Spat defers to param list with apply
@@ -82,7 +86,7 @@ class this.GPGFormEncryptor
       $("*[name='#{form_data[i].name}']").val(form_data[i].value)
 
   group_encryption: (form, form_data, callback) ->
-    elements = $("*[data-encrypt-source]")
+    elements = $(@group_source_selector)
     encryption_source_names = @find_names_for(form, elements)
     if encryption_source_names.length
       buffer = @collect_sources(elements)
@@ -115,7 +119,7 @@ class this.GPGFormEncryptor
         element.value = ""
 
   write_target: (buffer, data, callback)->
-    target_name = $("*[data-encrypt-target]").attr("name")
+    target_name = $(@group_target_selector).attr("name")
     if target_name
       @encrypt(buffer, (result_string) ->
         for element in data
