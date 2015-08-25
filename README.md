@@ -39,6 +39,11 @@ Given the form
 
 gpg-mail-form will collect all input annotated with data-encrypt-source, group them into one message and fill the data-encrypt-target with its encrypted representation.
 
+##INSTALLATION
+The repository represents an example project. It's a sinatra web app which demonstrates the described use cases on individual pages.
+
+To incorporate gpg-mail-form in your own site, you only need the files js/gpg_form_encryptor.coffee and assets/kbpgp/kbpgp.js as dependency. Have a look at js/setup.coffee to see how to configure and invoke the GPGFormEncryptor.
+
 ##TODOs
 
  * Provide sensible setup method to provide GPG public key. Currently the key is hardcoded in the script.
